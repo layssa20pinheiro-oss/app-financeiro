@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controle Financeiro</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: #f4f6f9; color: #333; padding: 20px; }
+    .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    h1 { font-size: 22px; text-align: center; margin-bottom: 20px; color: #1a202c; }
+    .cards { display: flex; gap: 10px; margin-bottom: 20px; }
+    .card { flex: 1; padding: 15px; border-radius: 8px; text-align: center; }
+    .card.entradas { background: #e6fffa; color: #234e52; }
+    .card.saidas { background: #fff5f5; color: #742a2a; }
+    .card.saldo { background: #ebf8ff; color: #2b6cb0; }
+    .card p { font-size: 12px; font-weight: bold; }
+    .card h2 { font-size: 18px; margin-top: 5px; }
+    form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    input, select, button { padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 14px; }
+    button { background-color: #3182ce; color: white; font-weight: bold; border: none; cursor: pointer; }
+    button:hover { background-color: #2b6cb0; }
+    ul { list-style: none; }
+    li { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #edf2f7; }
+    .receita { color: #38a169; font-weight: bold; }
+    .despesa { color: #e53e3e; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Meu Controle Financeiro</h1>
+
+    <!-- Resumo dos Valores -->
+    <div class="cards">
+      <div class="card entradas">
+        <p>Entradas</p>
+        <h2 id="total-entradas">R$ 0,00</h2>
+      </div>
+      <div class="card saidas">
+        <p>Saídas</p>
+        <h2 id="total-saidas">R$ 0,00</h2>
+      </div>
+      <div class="card saldo">
+        <p>Saldo</p>
+        <h2 id="total-saldo">R$ 0,00</h2>
+      </div>
+    </div>
+
+    <!-- Formulário de Lançamento -->
+    <form id="form-transacao">
+      <input type="text" id="descricao" placeholder="Descrição (ex: Mercado)" required />
+      <input type="number" id="valor" step="0.01" placeholder="Valor (ex: 150.00)" required />
+      <select id="tipo">
+        <option value="despesa">Despesa</option>
+        <option value="receita">Receita</option>
+      </select>
+      <button type="submit">Adicionar Lançamento</button>
+    </form>
+
+    <!-- Lista de Histórico -->
+    <h3>Histórico</h3>
+    <ul id="lista-transacoes"></ul>
+  </div>
+
+  <script>
+    // Inicialização do Supabase para navegador
+    const supabaseUrl = 'https://cbhdlewbvegrsdbrdszw.supabase.co';
+    const supabaseAnonKey = 'sb_publishable_1cRh5f00jopLbhnapQNaSw_RZMxO';
+    const supabaseClient = supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+    const form = document.getElementById('form-transacao');
+    const lista = document.getElementById('lista-transacoes');
+
+    // Função para carregar lançamentos do banco
+    async function carregarTransacoes() {
+      const { data: transacoes, error } = await supabaseClient
+        .from('transacoes')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao buscar transações:', error);
+        return;
+      }
+
+      lista.innerHTML = '';
+      let entradas = 0;
+      let saidas = 0;
+
+      transacoes.forEach(t => {
+        const val = parseFloat(t.valor);
+        if (t.tipo === 'receita') entradas += val;
+        else saidas += val;
+
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <span>${t.descricao}</span>
+          <span class="${t.tipo}">${t.tipo === 'receita' ? '+' : '-'} R$ ${val.toFixed(2)}</span>
+        `;
+        lista.appendChild(li);
+      });
+
+      document.getElementById('total-entradas').innerText = `R$ ${entradas.toFixed(2)}`;
+      document.getElementById('total-saidas').innerText = `R$ ${saidas.toFixed(2)}`;
+      document.getElementById('total-saldo').innerText = `R$ ${(entradas - saidas).toFixed(2)}`;
+    }
+
+    // Função para salvar novo lançamento
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const descricao = document.getElementById('descricao').value;
+      const valor = parseFloat(document.getElementById('valor').value);
+      const tipo = document.getElementById('tipo').value;
+
+      const { error } = await supabaseClient
+        .from('transacoes')
+        .insert([{ descricao, valor, tipo }]);
+
+      if (error) {
+        alert('Erro ao salvar transação: ' + error.message);
+      } else {
+        form.reset();
+        carregarTransacoes();
+      }
+    });
+
+    // Carrega dados ao abrir a tela
+    carregarTransacoes();
+  </script>
+</body>
+</html>
