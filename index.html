@@ -3,257 +3,195 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Controle Financeiro Completo</title>
-  <!-- Supabase JS -->
+  <title>Detalhes da Fatura</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- Chart.js para Gráficos -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    :root {
-      --bg-primary: #f4f6f9;
-      --bg-card: #ffffff;
-      --text-color: #2d3748;
-      --border-color: #e2e8f0;
-      --accent-color: #3182ce;
-      --success-color: #38a169;
-      --danger-color: #e53e3e;
-      --warning-color: #dd6b20;
-    }
-
-    [data-theme="dark"] {
-      --bg-primary: #1a202c;
-      --bg-card: #2d3748;
-      --text-color: #edf2f7;
-      --border-color: #4a5568;
-      --accent-color: #63b3ed;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; transition: background-color 0.3s, color 0.3s; }
-    body { background-color: var(--bg-primary); color: var(--text-color); padding: 20px; }
-    .container { max-width: 900px; margin: 0 auto; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: #121212; color: #ffffff; padding: 16px; display: flex; justify-content: center; }
+    .app-container { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 16px; position: relative; min-height: 90vh; }
     
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .theme-btn { padding: 8px 16px; border-radius: 20px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-color); cursor: pointer; }
+    /* Header e Mês Nav */
+    .header { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; font-size: 18px; font-weight: 600; }
+    .month-selector { display: flex; justify-content: space-between; align-items: center; margin: 8px 0; }
+    .month-btn { background: none; border: none; color: #8e8e93; font-size: 15px; cursor: pointer; }
+    .month-btn.active { background: #2c2c2e; color: #ffffff; padding: 6px 20px; border-radius: 20px; border: 1px solid #3a3a3c; font-weight: 600; }
 
-    /* Cards de Resumo */
-    .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
-    .card { background: var(--bg-card); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); text-align: center; }
-    .card p { font-size: 13px; opacity: 0.8; }
-    .card h2 { font-size: 20px; margin-top: 5px; }
+    /* Card Cartão e Resumo */
+    .fatura-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 12px; }
+    .card-cartao { background: linear-gradient(135deg, #e5e5ea 0%, #aeae24 100%); background-color: #d1d1d6; color: #000; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; height: 160px; }
+    .badge-status { background: #ffffff; color: #000; font-size: 11px; padding: 3px 8px; border-radius: 10px; font-weight: 600; align-self: flex-start; }
+    .logo-itau { background: #ff6200; color: #fff; font-weight: bold; padding: 4px 8px; border-radius: 8px; font-size: 12px; display: inline-block; }
+    .card-info { font-size: 11px; color: #3a3a3c; margin-top: 8px; }
+    .card-info strong { display: block; font-size: 13px; color: #000; }
 
-    /* Navegação por Abas */
-    .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); }
-    .tab-btn { padding: 10px 20px; background: none; border: none; color: var(--text-color); font-weight: bold; cursor: pointer; opacity: 0.6; }
-    .tab-btn.active { opacity: 1; border-bottom: 3px solid var(--accent-color); }
+    .card-resumo { background: #1c1c1e; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; justify-content: space-around; height: 160px; font-size: 12px; color: #8e8e93; }
+    .card-resumo span { display: block; font-weight: 600; font-size: 14px; margin-top: 2px; }
+    .val-verde { color: #30d158 !important; }
 
-    .tab-content { display: none; background: var(--bg-card); padding: 20px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 20px; }
-    .tab-content.active { display: block; }
+    .btn-pagar { background: #34c759; color: #000; font-weight: bold; border: none; padding: 14px; border-radius: 12px; font-size: 15px; width: 100%; cursor: pointer; }
 
-    /* Formulários e Inputs */
-    form { display: grid; gap: 12px; margin-bottom: 15px; }
-    .form-group { display: flex; flex-direction: column; gap: 5px; }
-    input, select, button { padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-color); font-size: 14px; }
-    button.btn-primary { background-color: var(--accent-color); color: white; border: none; font-weight: bold; cursor: pointer; }
+    /* Lista de Lançamentos */
+    .lancamentos-container { background: #1c1c1e; border-radius: 16px; padding: 16px; flex-grow: 1; min-height: 200px; }
+    .empty-state { text-align: center; color: #8e8e93; font-size: 14px; margin-top: 60px; }
+    .item-lancamento { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #2c2c2e; font-size: 14px; }
+    .item-desc { font-weight: 500; }
+    .item-sub { font-size: 11px; color: #8e8e93; }
 
-    /* Listas */
-    ul { list-style: none; }
-    li { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid var(--border-color); }
-    .val-receita { color: var(--success-color); font-weight: bold; }
-    .val-despesa { color: var(--danger-color); font-weight: bold; }
-
-    /* Layout do Dashboard */
-    .charts-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 15px; }
-    .chart-box { max-width: 100%; height: 260px; }
+    /* Botão Flutuante e Modal */
+    .btn-fab { position: fixed; bottom: 24px; right: calc(50% - 180px); width: 52px; height: 52px; border-radius: 26px; background: #ff453a; color: #fff; font-size: 28px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+    
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; }
+    .modal-content { background: #1c1c1e; padding: 20px; border-radius: 16px; width: 90%; max-width: 350px; display: flex; flex-direction: column; gap: 12px; }
+    .modal-content input { padding: 12px; background: #2c2c2e; border: 1px solid #3a3a3c; border-radius: 8px; color: #fff; }
+    .modal-content button { padding: 12px; background: #30d158; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <header>
-      <h1>Gestão Financeira</h1>
-      <button class="theme-btn" id="toggle-theme">🌙 Modo Escuro</button>
-    </header>
-
-    <!-- Cards de Visão Geral -->
-    <div class="cards-grid">
-      <div class="card"><p>Conta Corrente</p><h2 id="saldo-corrente">R$ 0,00</h2></div>
-      <div class="card"><p>Poupança/Investimentos</p><h2 id="saldo-investimento">R$ 0,00</h2></div>
-      <div class="card"><p>Faturas de Cartão</p><h2 id="saldo-cartao" style="color: var(--danger-color)">R$ 0,00</h2></div>
+  <div class="app-container">
+    <div class="header">
+      <span>‹</span>
+      <span>Detalhes da fatura</span>
+      <span>⋮</span>
     </div>
 
-    <!-- Abas de Navegação -->
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
-      <button class="tab-btn" onclick="switchTab('lancamentos')">Lançamentos</button>
-      <button class="tab-btn" onclick="switchTab('contas')">Contas e Cartões</button>
+    <!-- Navegação entre Meses -->
+    <div class="month-selector">
+      <button class="month-btn" onclick="mudarMes('2026-09')">Setembro</button>
+      <button class="month-btn active" id="btn-outubro" onclick="mudarMes('2026-10')">Outubro</button>
+      <button class="month-btn" onclick="mudarMes('2026-11')">Novembro</button>
     </div>
 
-    <!-- ABA 1: DASHBOARD -->
-    <div id="tab-dashboard" class="tab-content active">
-      <h3>Resumo por Categoria</h3>
-      <div class="charts-container">
-        <div class="chart-box"><canvas id="chartCategorias"></canvas></div>
+    <!-- Exibição do Cartão e Totais -->
+    <div class="fatura-grid">
+      <div class="card-cartao">
+        <div style="display: flex; justify-content: space-between; width: 100%;">
+          <span class="logo-itau">itaú</span>
+          <span class="badge-status">Aberta</span>
+        </div>
+        <div class="card-info">
+          <strong>Itaú Múltiplo</strong>
+          Fecha em 30/09<br>
+          Vence em 06/10
+        </div>
+      </div>
+
+      <div class="card-resumo">
+        <div>Saldo anterior <span class="val-verde">R$ 0,00</span></div>
+        <div>Gasto mês <span class="val-verde" id="gasto-mes">R$ 0,00</span></div>
+        <div>Valor fatura <span class="val-verde" id="valor-fatura">R$ 0,00</span></div>
       </div>
     </div>
 
-    <!-- ABA 2: LANÇAMENTOS -->
-    <div id="tab-lancamentos" class="tab-content">
-      <h3>Novo Lançamento</h3>
-      <form id="form-lancamento">
-        <input type="text" id="desc" placeholder="Descrição (ex: Supermercado)" required />
-        <input type="number" id="valor" step="0.01" placeholder="Valor (R$)" required />
-        <select id="tipo">
-          <option value="despesa">Despesa</option>
-          <option value="receita">Receita</option>
-        </select>
-        <select id="origem">
-          <option value="corrente">Conta Corrente</option>
-          <option value="investimento">Poupança / Investimento</option>
-          <option value="cartao">Cartão de Crédito</option>
-        </select>
-        <select id="categoria">
-          <option value="Alimentação">Alimentação</option>
-          <option value="Moradia">Moradia</option>
-          <option value="Lazer">Lazer</option>
-          <option value="Investimento">Investimentos</option>
-          <option value="Outros">Outros</option>
-        </select>
-        <button type="submit" class="btn-primary">Registrar Lançamento</button>
-      </form>
+    <button class="btn-pagar">Pagar fatura</button>
 
-      <h3>Histórico</h3>
-      <ul id="lista-historico"></ul>
+    <!-- Lista de Histórico de Lançamentos -->
+    <div class="lancamentos-container">
+      <div id="lista-lancamentos" class="empty-state">
+        Nenhum lançamento nesta fatura
+      </div>
     </div>
 
-    <!-- ABA 3: CONTAS E CARTÕES -->
-    <div id="tab-contas" class="tab-content">
-      <h3>Cadastrar Conta / Investimento</h3>
-      <form id="form-conta">
-        <input type="text" id="nome-conta" placeholder="Nome (ex: Nubank, Banco do Brasil)" required />
-        <select id="tipo-conta">
-          <option value="corrente">Conta Corrente</option>
-          <option value="poupanca">Poupança</option>
-          <option value="investimento">Investimento</option>
-        </select>
-        <button type="submit" class="btn-primary">Salvar Conta</button>
-      </form>
+    <button class="btn-fab" onclick="abrirModal()">+</button>
+  </div>
 
-      <h3 style="margin-top:20px;">Cadastrar Cartão de Crédito</h3>
-      <form id="form-cartao">
-        <input type="text" id="nome-cartao" placeholder="Nome do Cartão (ex: Cartão XP)" required />
-        <input type="number" id="limite-cartao" placeholder="Limite de Crédito (R$)" required />
-        <button type="submit" class="btn-primary">Salvar Cartão</button>
-      </form>
+  <!-- Modal para Novo Lançamento -->
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <h3>Novo Lançamento</h3>
+      <input type="text" id="desc" placeholder="Descrição (ex: Mercado)" />
+      <input type="number" id="valor" step="0.01" placeholder="Valor (R$)" />
+      <input type="date" id="data" />
+      <button onclick="salvarLancamento()">Salvar na Fatura</button>
+      <button onclick="fecharModal()" style="background:#ff453a; color:#fff;">Cancelar</button>
     </div>
   </div>
 
   <script>
-    // Inicialização do Supabase
     const supabaseUrl = 'https://cbhdlewbvegrsdbrdszw.supabase.co';
     const supabaseAnonKey = 'sb_publishable_1cRh5f00jopLbhnapQNaSw_RZMxO';
     const supabaseClient = supabase.createClient(supabaseUrl, supabaseAnonKey);
 
-    let chartInstance = null;
+    let mesAtual = '2026-10'; // Mês padrão de exibição
+    document.getElementById('data').valueAsDate = new Date();
 
-    // Alternar Modo Escuro
-    document.getElementById('toggle-theme').addEventListener('click', () => {
-      const isDark = document.body.getAttribute('data-theme') === 'dark';
-      document.body.setAttribute('data-theme', isDark ? 'light' : 'dark');
-      document.getElementById('toggle-theme').innerText = isDark ? '🌙 Modo Escuro' : '☀️ Modo Claro';
-    });
-
-    // Alternar Abas
-    function switchTab(tabName) {
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-      
+    function mudarMes(mes) {
+      mesAtual = mes;
+      document.querySelectorAll('.month-btn').forEach(b => b.classList.remove('active'));
       event.target.classList.add('active');
-      document.getElementById(`tab-${tabName}`).classList.add('active');
-      if (tabName === 'dashboard') carregarDashboard();
+      carregarFatura();
     }
 
-    // Carregar Lançamentos e Calcular Saldos
-    async function carregarDados() {
+    async function carregarFatura() {
       const { data: transacoes, error } = await supabaseClient
         .from('transacoes')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*');
 
-      if (error) return console.error(error);
+      if (error) {
+        console.error('Erro ao buscar lançamentos:', error);
+        return;
+      }
 
-      let corrente = 0, investimentos = 0, cartao = 0;
-      const lista = document.getElementById('lista-historico');
-      lista.innerHTML = '';
-
-      transacoes.forEach(t => {
-        const val = parseFloat(t.valor);
-        if (t.tipo === 'receita') {
-          if (t.seletor_tipo === 'conta') corrente += val;
-        } else {
-          if (t.seletor_tipo === 'cartao') cartao += val;
-          else corrente -= val;
-        }
-
-        const li = document.createElement('li');
-        li.innerHTML = `
-          <span>${t.descricao} <small>(${t.categoria_id || 'Geral'})</small></span>
-          <span class="val-${t.tipo}">${t.tipo === 'receita' ? '+' : '-'} R$ ${val.toFixed(2)}</span>
-        `;
-        lista.appendChild(li);
+      // Filtrar lançamentos pelo mês selecionado
+      const filtrados = transacoes.filter(t => {
+        const dataTrans = t.data_transacao || t.created_at;
+        return dataTrans && dataTrans.startsWith(mesAtual);
       });
 
-      document.getElementById('saldo-corrente').innerText = `R$ ${corrente.toFixed(2)}`;
-      document.getElementById('saldo-cartao').innerText = `R$ ${cartao.toFixed(2)}`;
-      carregarDashboard(transacoes);
+      const container = document.getElementById('lista-lancamentos');
+      let total = 0;
+
+      if (filtrados.length === 0) {
+        container.className = 'empty-state';
+        container.innerHTML = 'Nenhum lançamento nesta fatura';
+      } else {
+        container.className = '';
+        container.innerHTML = '';
+        filtrados.forEach(t => {
+          const val = parseFloat(t.valor);
+          total += val;
+          const div = document.createElement('div');
+          div.className = 'item-lancamento';
+          div.innerHTML = `
+            <div>
+              <div class="item-desc">${t.descricao}</div>
+              <div class="item-sub">${t.data_transacao || 'Hoje'}</div>
+            </div>
+            <div style="font-weight:600;">R$ ${val.toFixed(2)}</div>
+          `;
+          container.appendChild(div);
+        });
+      }
+
+      document.getElementById('gasto-mes').innerText = `R$ ${total.toFixed(2)}`;
+      document.getElementById('valor-fatura').innerText = `R$ ${total.toFixed(2)}`;
     }
 
-    // Gerar Gráfico no Dashboard
-    function carregarDashboard(transacoes = []) {
-      const categorias = {};
-      
-      transacoes.filter(t => t.tipo === 'despesa').forEach(t => {
-        const cat = t.categoria_id || 'Outros';
-        categorias[cat] = (categorias[cat] || 0) + parseFloat(t.valor);
-      });
+    function abrirModal() { document.getElementById('modal').style.display = 'flex'; }
+    function fecharModal() { document.getElementById('modal').style.display = 'none'; }
 
-      const ctx = document.getElementById('chartCategorias').getContext('2d');
-      if (chartInstance) chartInstance.destroy();
-
-      chartInstance = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: Object.keys(categorias),
-          datasets: [{
-            data: Object.values(categorias),
-            backgroundColor: ['#e53e3e', '#dd6b20', '#3182ce', '#38a169', '#805ad5']
-          }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-      });
-    }
-
-    // Form de Lançamentos
-    document.getElementById('form-lancamento').addEventListener('submit', async (e) => {
-      e.preventDefault();
+    async function salvarLancamento() {
       const descricao = document.getElementById('desc').value;
       const valor = parseFloat(document.getElementById('valor').value);
-      const tipo = document.getElementById('tipo').value;
-      const origem = document.getElementById('origem').value;
-      const categoria_id = document.getElementById('categoria').value;
+      const data_transacao = document.getElementById('data').value;
 
-      const { error } = await supabaseClient.from('transacoes').insert([{
-        descricao, valor, tipo, 
-        seletor_tipo: origem === 'cartao' ? 'cartao' : 'conta',
-        categoria_id
-      }]);
+      if (!descricao || !valor) return alert('Preencha os campos!');
 
-      if (!error) {
-        document.getElementById('form-lancamento').reset();
-        carregarDados();
+      const { error } = await supabaseClient
+        .from('transacoes')
+        .insert([{ descricao, valor, tipo: 'despesa', seletor_tipo: 'cartao', data_transacao }]);
+
+      if (error) {
+        alert('Erro ao salvar: ' + error.message);
+      } else {
+        fecharModal();
+        document.getElementById('desc').value = '';
+        document.getElementById('valor').value = '';
+        carregarFatura();
       }
-    });
+    }
 
-    carregarDados();
+    carregarFatura();
   </script>
 </body>
 </html>
